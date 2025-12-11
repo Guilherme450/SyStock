@@ -1,1 +1,92 @@
-# documento docker
+
+services:
+  # Data Warehouse PostgreSQL
+  postgres-dw:
+    image: postgres:15-alpine
+    container_name: systock-postgres-dw
+    environment:
+      POSTGRES_DB: ${DB_NAME:-systock_dw}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data_warehouse/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-systock_dw}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - systock_network
+    restart: unless-stopped
+
+  # ETL Pipeline
+  etl-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: systock-etl
+    environment:
+      DB_HOST: postgres-dw
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-systock_dw}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      ETL_LOG_LEVEL: ${ETL_LOG_LEVEL:-INFO}
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://prefect:4200/api}
+    depends_on:
+      postgres-dw:
+        condition: service_healthy
+    volumes:
+      - ./etl_pipeline:/app
+      - ./logs:/app/logs
+    networks:
+      - systock_network
+    restart: unless-stopped
+
+  # Prefect Server (Orquestração opcional)
+  prefect:
+    image: prefecthq/prefect:2-latest
+    container_name: systock-prefect
+    environment:
+      PREFECT_HOME: /root/.prefect
+    ports:
+      - "4200:4200"
+    volumes:
+      - prefect_data:/root/.prefect
+    networks:
+      - systock_network
+    restart: unless-stopped
+    command: prefect server start
+
+  # PgAdmin para gerenciamento do banco (opcional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: systock-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres-dw
+    networks:
+      - systock_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  prefect_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  systock_network:
+    driver: bridge
