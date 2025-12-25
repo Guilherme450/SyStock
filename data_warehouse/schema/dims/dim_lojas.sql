@@ -1,11 +1,10 @@
 DROP TABLE IF EXISTS analytics.dim_loja CASCADE;
 
 CREATE TABLE analytics.dim_loja (
-    id_loja INTEGER PRIMARY KEY,
+    sk_loja SERIAL PRIMARY KEY,
+    id_loja_api INTEGER NOT NULL UNIQUE,
     nome_loja VARCHAR(255) NOT NULL,
     endereco_loja TEXT,
-    fornecedor_nome VARCHAR(255),
-    fornecedor_cnpj VARCHAR(14),
     data_carga TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

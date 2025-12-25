@@ -9,7 +9,7 @@ CREATE TABLE analytics.dim_tempo (
     semana INTEGER NOT NULL,
     dia INTEGER NOT NULL,
     dia_semana VARCHAR(20) NOT NULL,
-    nome_mes VARCHAR(20) NOT NULL,
+    --nome_mes VARCHAR(20) NOT NULL,
     eh_fim_semana BOOLEAN NOT NULL
     --inicio_semana DATE NOT NULL,
     --inicio_mes DATE NOT NULL,
