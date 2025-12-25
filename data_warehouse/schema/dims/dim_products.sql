@@ -1,17 +1,16 @@
 DROP TABLE IF EXISTS analytics.dim_produto CASCADE;
 
 CREATE TABLE analytics.dim_produto (
-    id_produto INTEGER PRIMARY KEY,
+    sk_produto SERIAL PRIMARY KEY,
+    id_produto_api INTEGER NOT NULL UNIQUE,
     nome_produto VARCHAR(255) NOT NULL,
     descricao_produto TEXT,
-    --id_categoria INTEGER,
+    id_categoria INTEGER,
     nome_categoria VARCHAR(255),
     descricao_categoria TEXT,
     preco_venda NUMERIC(10,2),
     custo_fornecedor NUMERIC(10,2),
     ativo BOOLEAN DEFAULT TRUE,
-    --margem_bruta NUMERIC(10,2),
-    --percentual_margem NUMERIC(5,2),
     data_carga TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
