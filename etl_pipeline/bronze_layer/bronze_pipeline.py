@@ -1,6 +1,6 @@
-"""
-Pipeline de Ingestão da Bronze Layer
-Orquestra a extração de dados da API e ingestão na bronze layer.
+"""Bronze Layer ingestion pipeline.
+
+Orchestrates API extraction and ingestion into the Bronze layer.
 """
 
 import logging
@@ -9,11 +9,12 @@ import sys
 from icecream import ic
 from pathlib import Path
 
-# Adicionar path do parent para importar módulos
+# Add parent path to import local modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from extract.extract_api import extract_all_endpoints, get_data, ENDPOINTS
-from bronze_manager import BronzeLayerManager
+from extract.extract_api import extract_all_endpoints
+
+from bronze_layer.bronze_manager import BronzeLayerManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,18 +22,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 class BronzePipeline:
-    """
-    Pipeline que conecta Extract Layer com Bronze Layer.
-    """
+    """Pipeline connecting the Extract layer with the Bronze layer."""
     
     def __init__(self, base_path: Optional[str] = None):
-        """
-        Inicializa o pipeline.
-        
+        """Initialize the pipeline.
+
         Args:
-            base_path: Caminho base para armazenar dados
+            base_path: base path to store data
         """
         self.bronze_manager = BronzeLayerManager(base_path)
         logger.info("Bronze Pipeline initialized")
@@ -46,11 +43,11 @@ class BronzePipeline:
         """
         logger.info("Starting full extraction pipeline")
         
-        # Extrair dados de todos os endpoints
-        extracted_data = extract_all_endpoints() # do modulo extract -> conexao direta com a fonte (API)
-        
-        # Ingerir dados na bronze layer
-        results = self.bronze_manager.ingest_multiple_entities(extracted_data) # modulo bronze_manager 
+        # Extract data from all endpoints
+        extracted_data = extract_all_endpoints()
+
+        # Ingest data into the Bronze layer
+        results = self.bronze_manager.ingest_multiple_entities(extracted_data)
         
         logger.info("Full extraction pipeline completed")
         return results
@@ -87,11 +84,10 @@ class BronzePipeline:
     #     return result
     
     def generate_report(self) -> Dict:
-        """
-        Gera relatório da bronze layer.
-        
+        """Generate a report for the Bronze layer.
+
         Returns:
-            Dict com estatísticas de todas as entidades
+            dict with statistics for all entities
         """
         logger.info("Generating bronze layer report")
         
@@ -109,14 +105,13 @@ class BronzePipeline:
         return report
     
     def cleanup_old_data(self, keep_count: int = 5) -> Dict[str, int]:
-        """
-        Remove arquivos antigos de todas as entidades.
-        
+        """Remove old files for all entities.
+
         Args:
-            keep_count: Número de arquivos a manter por entidade
-            
+            keep_count: number of files to keep per entity
+
         Returns:
-            Dict com número de arquivos removidos por entidade
+            dict with number of files removed per entity
         """
         logger.info(f"Starting cleanup (keeping {keep_count} recent files per entity)")
         
@@ -132,23 +127,19 @@ class BronzePipeline:
 
 
 if __name__ == '__main__':
-    # Exemplo de uso
+    # Example usage
     pipeline = BronzePipeline()
-    
-    # Opção 1: Executar extração completa
+
+    # Option 1: run full extraction
     results = pipeline.run_full_extraction()
     ic("Extraction results:", results)
-    
-    # Opção 2: Extrair uma entidade específica
-    # result = pipeline.run_single_entity_extraction('clientes')
-    # print("Single entity result:", result)
-    
-    # Opção 3: Gerar relatório
+
+    # Option 2: generate report
     # report = pipeline.generate_report()
     # print("Bronze Layer Report:", report)
-    
-    # Opção 4: Limpar arquivos antigos
+
+    # Option 3: cleanup older files
     # cleanup_results = pipeline.cleanup_old_data(keep_count=5)
     # print("Cleanup results:", cleanup_results)
-    
+
     logger.info("Bronze pipeline available for use")
