@@ -1,9 +1,8 @@
 """
 Bronze Layer - Raw Data Ingestion
-Responsável por ingerir e armazenar dados brutos da API em formato Parquet.
+Responsible for ingesting and storing raw API data in Parquet format.
 """
 
 from .bronze_manager import BronzeLayerManager
-from .bronze_pipeline import BronzePipeline
 
-__all__ = ["BronzeLayerManager", "BronzePipeline"]
+__all__ = ["BronzeLayerManager"]
