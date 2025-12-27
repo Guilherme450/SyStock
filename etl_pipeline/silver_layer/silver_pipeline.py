@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from datetime import datetime
 
-from silver_manager import SilverLayerManager
+from silver_layer.silver_manager import SilverLayerManager
 
 # Setup logging
 logging.basicConfig(
@@ -59,7 +59,7 @@ class SilverPipeline:
             Results with row counts for each transformed entity.
         """
         logger.info("=" * 70)
-        logger.info("INICIANDO TRANSFORMAÇÃO COMPLETA - SILVER LAYER")
+        logger.info("STARTING FULL TRANSFORMATION - SILVER LAYER")
         logger.info("=" * 70)
 
         try:
@@ -67,13 +67,13 @@ class SilverPipeline:
             self.execution_results = results
 
             logger.info("=" * 70)
-            logger.info("✓ TRANSFORMAÇÃO COMPLETA FINALIZADA COM SUCESSO")
+            logger.info("✓ FULL TRANSFORMATION COMPLETED SUCCESSFULLY")
             logger.info("=" * 70)
 
             return results
 
         except Exception as e:
-            logger.error(f"✗ Erro na transformação completa: {e}")
+            logger.error(f"✗ Error during full transformation: {e}")
             raise
 
     # def run_single_dimension_extraction(self, dimension_name: str) -> int:
@@ -141,7 +141,7 @@ class SilverPipeline:
         str
             Formatted report.
         """
-        logger.info("Gerando relatório...")
+        logger.info("Generating report...")
         report = self.manager.generate_report()
         logger.info(report)
         return report
@@ -160,7 +160,7 @@ class SilverPipeline:
         int
             Number of files removed.
         """
-        logger.info(f"Limpando arquivos com mais de {days} dias...")
+        logger.info(f"Cleaning files older than {days} days...")
 
         from datetime import timedelta
         import os
@@ -174,11 +174,11 @@ class SilverPipeline:
                     try:
                         file.unlink()
                         removed_count += 1
-                        logger.debug(f"Removido: {file}")
+                        logger.debug(f"Removed: {file}")
                     except Exception as e:
-                        logger.error(f"Erro ao remover {file}: {e}")
+                        logger.error(f"Error removing {file}: {e}")
 
-        logger.info(f"✓ {removed_count} arquivos removidos")
+        logger.info(f"✓ {removed_count} files removed")
         return removed_count
 
 
