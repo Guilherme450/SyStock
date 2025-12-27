@@ -52,37 +52,6 @@ class BronzePipeline:
         logger.info("Full extraction pipeline completed")
         return results
     
-    # def run_single_entity_extraction(self, entity_name: str) -> Optional[str]:
-    #     """
-    #     Executa extração de uma entidade específica.
-        
-    #     Args:
-    #         entity_name: Nome da entidade (ex: 'clientes', 'produtos')
-            
-    #     Returns:
-    #         str: Caminho do arquivo salvo, ou None se falhar
-    #     """
-    #     logger.info(f"Starting extraction for entity: {entity_name}")
-        
-    #     if entity_name not in ENDPOINTS:
-    #         logger.error(f"Unknown entity: {entity_name}")
-    #         logger.info(f"Available entities: {list(ENDPOINTS.keys())}")
-    #         return None
-        
-    #     # Extrair dados
-    #     url = f"https://systock-api.onrender.com/{ENDPOINTS[entity_name]}"
-    #     data = get_data(url)
-        
-    #     if data is None:
-    #         logger.error(f"Failed to extract data for {entity_name}")
-    #         return None
-        
-    #     # Ingerir na bronze layer
-    #     result = self.bronze_manager.ingest_data(data, entity_name)
-        
-    #     logger.info(f"Extraction for {entity_name} completed")
-    #     return result
-    
     def generate_report(self) -> Dict:
         """Generate a report for the Bronze layer.
 

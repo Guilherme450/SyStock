@@ -21,7 +21,7 @@ class ReadSilverParquet:
         file_path = self.silver_dir / f"{entity_name}.parquet"
 
         if not file_path.exists():
-            raise FileNotFoundError(f"Arquivo não encontrado: {file_path}")
+            raise FileNotFoundError(f"File not found: {file_path}")
 
         return pl.read_parquet(file_path)
 
@@ -42,7 +42,7 @@ class LoadDimension(BaseLoader):
         df_dim_tempo = self.read_silver.read("dim_tempo")
 
         if df_dim_tempo.is_empty():
-            ic("dim_tempo vazia -- carga ignorada")
+            ic("dim_tempo empty — load skipped")
             return
 
         sql = """
@@ -66,13 +66,13 @@ class LoadDimension(BaseLoader):
             with conn.cursor() as cursor:
                 execute_values(cursor, sql, records, page_size=1000)
 
-        ic("Carregamento de dim_tempo realizado com sucesso")
+        ic("dim_tempo load completed successfully")
 
     def load_dim_clientes(self):
         df_dim_cliente = self.read_silver.read("dim_clientes")
 
         if df_dim_cliente.is_empty():
-            ic("dim_clientes vazia -- carga ignorada")
+            ic("dim_clients empty — load skipped")
             return
 
         sql = """
@@ -103,13 +103,13 @@ class LoadDimension(BaseLoader):
             with conn.cursor() as cursor:
                 execute_values(cursor, sql, records, page_size=1000)
 
-        ic("Carregamento de dim_clientes realizado com sucesso")
+        ic("dim_clients load completed successfully")
 
     def load_dim_lojas(self):
         df_dim_lojas = self.read_silver.read("dim_lojas")
 
         if df_dim_lojas.is_empty():
-            ic("dim_lojas vazia -- carga ignorada")
+            ic("dim_stores empty — load skipped")
             return
 
         sql = """
@@ -133,13 +133,13 @@ class LoadDimension(BaseLoader):
             with conn.cursor() as cursor:
                 execute_values(cursor, sql, records, page_size=1000)
 
-        ic("Carregamento de dim_lojas realizado com sucesso")
+        ic("dim_stores load completed successfully")
 
     def load_dim_produto(self):
         df_dim_produtos = self.read_silver.read("dim_produtos")
 
         if df_dim_produtos.is_empty():
-            ic("dim_produtos vazia -- carga ignorada")
+            ic("dim_products empty — load skipped")
             return
 
         sql = """
@@ -173,7 +173,8 @@ class LoadDimension(BaseLoader):
             with conn.cursor() as cursor:
                 execute_values(cursor, sql, records, page_size=1000)
 
-        ic("Carregamento de dim_produtos realizado com sucesso")
+        ic("dim_products load completed successfully")
+
 
 @dataclass
 class LoadFacts(BaseLoader):
@@ -182,7 +183,7 @@ class LoadFacts(BaseLoader):
         df_fact_estoque = self.read_silver.read("fact_estoque")
 
         if df_fact_estoque.is_empty():
-            ic("fact_estoque vazia -- carga ignorada")
+            ic("fact_inventory empty — load skipped")
             return
 
         sql = """
@@ -222,13 +223,13 @@ class LoadFacts(BaseLoader):
             with conn.cursor() as cursor:
                 execute_values(cursor, sql, records, page_size=1000)
 
-        ic("Carregamento de fact_estoque realizado com sucesso")
+        ic("fact_inventory load completed successfully")
 
     def load_fact_vendas(self):
         df_fact_vendas = self.read_silver.read("fact_vendas")
 
         if df_fact_vendas.is_empty():
-            ic("fact_vendas vazia -- carga ignorada")
+            ic("fact_sales empty — load skipped")
             return
 
         sql = """
@@ -272,13 +273,13 @@ class LoadFacts(BaseLoader):
             with conn.cursor() as cursor:
                 execute_values(cursor, sql, records, page_size=1000)
 
-        ic("Carregamento de fact_vendas realizado com sucesso")
+        ic("fact_sales load completed successfully")
 
     def load_fact_distribuicao(self):
         df_fact_distribuicao = self.read_silver.read("fact_distribuicoes")
 
         if df_fact_distribuicao.is_empty():
-            ic("fact_distribuicoes vazia -- carga ignorada")
+            ic("fact_distributions empty — load skipped")
             return
 
         sql = """
@@ -312,7 +313,7 @@ class LoadFacts(BaseLoader):
             with conn.cursor() as cursor:
                 execute_values(cursor, sql, records, page_size=1000)
 
-        ic("Carregamento de fact_distribuicoes realizado com sucesso")
+        ic("fact_distributions load completed successfully")
 
 if __name__ == '__main__':
     BASE_DIR = Path(__file__).resolve().parent

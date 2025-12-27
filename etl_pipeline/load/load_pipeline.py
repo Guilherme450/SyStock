@@ -1,16 +1,48 @@
+"""
+Load pipeline module.
+
+This module defines LoadPipeline, a convenience wrapper that reads Silver
+parquet files for dimensions and facts and invokes loader routines that
+persist those datasets into the target database.
+
+Typical usage:
+    from pathlib import Path
+    from etl_pipeline.load.load_pipeline import LoadPipeline
+
+    project_root = Path(__file__).resolve().parent.parent.parent
+    pipeline = LoadPipeline(project_root)
+    pipeline.load_all()             # load all dims and facts
+    pipeline.load_all_dimensions()  # load only dimensions
+    pipeline.load_all_facts()       # load only facts
+
+Notes:
+- The pipeline expects silver parquet files under:
+    <project_root>/etl_pipeline/data/silver/dims
+    <project_root>/etl_pipeline/data/silver/facts
+- Loaders are configured via DB_CONFIG from load.load_entities.
+"""
 from pathlib import Path
-#import argparse
-#import sys
 from typing import List
 
-from load_entities import (
+from load.load_entities import (
     ReadSilverParquet,
     LoadDimension,
     LoadFacts,
     DB_CONFIG,
 )
 
+
 class LoadPipeline:
+    """Pipeline orchestrator for loading dimensions and facts into a database.
+
+    The class prepares readers for the silver parquet sources and instantiates
+    loader objects. It exposes methods to load all dimensions, all facts, or
+    both.
+
+    Args:
+        project_root: Root path of the project used to locate silver data.
+    """
+
     def __init__(self, project_root: Path):
         self.project_root = project_root
 
@@ -28,7 +60,12 @@ class LoadPipeline:
         self.loader_facts = LoadFacts(DB_CONFIG, self.reader_facts)
 
     def load_all_dimensions(self, selected: List[str] | None = None):
-        """Carrega todas as dimensões ou as selecionadas."""
+        """Load all dimension tables or a selected subset.
+
+        Args:
+            selected: Optional list of dimension keys to run (e.g. 'dim_clientes').
+                      If None, all known dimensions are loaded.
+        """
         mapping = {
             "dim_tempo": self.loader_dims.load_dim_tempo,
             "dim_clientes": self.loader_dims.load_dim_clientes,
@@ -50,7 +87,12 @@ class LoadPipeline:
                 print(f"[ERROR] Falha ao carregar {name}: {exc}")
 
     def load_all_facts(self, selected: List[str] | None = None):
-        """Carrega todos os fatos ou os selecionados."""
+        """Load all fact tables or a selected subset.
+
+        Args:
+            selected: Optional list of fact keys to run (e.g. 'fact_vendas').
+                      If None, all known facts are loaded.
+        """
         mapping = {
             "fact_estoque": self.loader_facts.load_fact_estoque,
             "fact_vendas": self.loader_facts.load_fact_vendas,
@@ -71,6 +113,7 @@ class LoadPipeline:
                 print(f"[ERROR] Falha ao carregar {name}: {exc}")
 
     def load_all(self):
+        """Load all dimensions first, then all facts."""
         self.load_all_dimensions()
         self.load_all_facts()
 
@@ -79,41 +122,8 @@ def _get_project_root() -> Path:
     # assume file is in etl_pipeline/load
     return Path(__file__).resolve().parent.parent.parent
 
+if __name__ == "__main__":
+    project_root = _get_project_root()
+    pipeline = LoadPipeline(project_root)
 
-# def parse_args(argv: List[str]) -> argparse.Namespace:
-#     p = argparse.ArgumentParser(description="Orquestrador de carregamento DW")
-#     group = p.add_mutually_exclusive_group()
-#     group.add_argument("--all", action="store_true", help="Carrega todas entidades")
-#     group.add_argument("--dims", nargs="*", help="Carrega dimensões (ou lista)" )
-#     group.add_argument("--facts", nargs="*", help="Carrega fatos (ou lista)")
-#     return p.parse_args(argv)
-
-
-# def main(argv: List[str] | None = None):
-#     args = parse_args(list(argv) if argv is not None else None)
-
-#     project_root = _get_project_root()
-#     pipeline = LoadPipeline(project_root)
-
-#     if args.all:
-#         pipeline.load_all()
-#         return
-
-#     if args.dims is not None:
-#         # if user passes empty list (i.e. --dims) args.dims == [] meaning all dims
-#         selected = None if len(args.dims) == 0 else args.dims
-#         pipeline.load_all_dimensions(selected)
-#         return
-
-#     if args.facts is not None:
-#         selected = None if len(args.facts) == 0 else args.facts
-#         pipeline.load_all_facts(selected)
-#         return
-
-#     print("Nenhuma ação especificada. Use --help para ver opções.")
-
-
-# if __name__ == "__main__":
-#     # argparse expects sys.argv[1:], so pass None to main to use sys.argv implicitly
-#     load_pipe = LoadPipeline()
-#     load_pipe.load_all()
+    pipeline.load_all()
