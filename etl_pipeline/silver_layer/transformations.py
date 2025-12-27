@@ -385,16 +385,12 @@ class FactTransformer:
         )
 
     def transform_vendas(self) -> pl.DataFrame:
-        # TODO: realizar a implementação das seguintes métricas:
-        # Cálculos diretos:
-
-        # valor_total = quantidade * valor_unitario
-
-        # custo_total = quantidade * custo_unitario
-
-        # lucro = valor_total - custo_total
-
-        # margem_lucro = lucro / valor_total
+        # TODO: implement the following derived metrics where applicable:
+        # Direct calculations:
+        # total_value = quantity * unit_price
+        # total_cost = quantity * cost_unit
+        # profit = total_value - total_cost
+        # profit_margin = profit / total_value
 
         """
         Transform vendas (sales) data to fact_vendas.
@@ -516,14 +512,10 @@ class FactTransformer:
         return df_final
 
     def transform_estoque(self) -> pl.DataFrame:
-        # TODO: Realiazar a adição das métricas: 
-
-        # quantidade_inicial(int), 
-        # quantidade_final(int), 
-        # valor_inicial(float), 
-        # valor_final(float), 
-        # entrada(int)
-        #  e saida(int)
+        # TODO: Add metrics such as:
+        # initial_quantity (int), final_quantity (int),
+        # initial_value (float), final_value (float),
+        # inputs (int) and outputs (int)
 
 
         """
