@@ -1,157 +1,119 @@
-# SyStock - Data Warehouse com Docker
+# SyStock — Data Warehouse with Docker
 
-## Configuração do Ambiente
+## Environment setup
 
-### Pré-requisitos
-- Docker (versão 20.10+)
-- Docker Compose (versão 1.29+)
+### Requirements
+- Docker (20.10+)
+- Docker Compose (1.29+)
 - Git
 
-### Variáveis de Ambiente
+### Environment variables
 
-Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
+Create a `.env` file at the repository root from the provided example:
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` com suas configurações:
+Edit `.env` with your configuration:
 
 ```env
-# Database Configuration
+# Database
 DB_HOST=postgres-dw
 DB_PORT=5432
 DB_NAME=systock_dw
 DB_USER=postgres
-DB_PASSWORD=postgres  # ALTERE PARA UM PASSWORD SEGURO EM PRODUÇÃO
+DB_PASSWORD=postgres
 
-# PgAdmin Configuration
+# PgAdmin
 PGADMIN_EMAIL=admin@example.com
 PGADMIN_PASSWORD=admin
 
-# ETL Configuration
+# ETL
 ETL_LOG_LEVEL=INFO
 
-# Prefect Configuration
+# Prefect
 PREFECT_API_URL=http://prefect:4200/api
 
-# Application Configuration
+# App
 ENVIRONMENT=development
 DEBUG=true
 ```
 
-## Iniciando os Serviços
+## Start services
 
-### 1. Iniciar todos os containers
+Start all containers:
 
 ```bash
 docker-compose up -d
 ```
 
-### 2. Verificar status dos containers
+Check container status:
 
 ```bash
 docker-compose ps
 ```
 
-### 3. Acessar os serviços
+Access services:
 
-- **PostgreSQL Data Warehouse**: `localhost:5432`
-  - Usuário: postgres
-  - Senha: (conforme definido no .env)
-  - Database: systock_dw
+- PostgreSQL: `localhost:5432` (user `postgres`, database `systock_dw`)
+- PgAdmin: http://localhost:5050 (use credentials from `.env`)
+- Prefect: http://localhost:4200
 
-- **PgAdmin**: http://localhost:5050
-  - Email: admin@example.com
-  - Senha: admin
+## Warehouse layers
 
-- **Prefect Server**: http://localhost:4200
-  - Interface para orquestração de workflows
+The warehouse uses four logical schemas:
 
-## Estrutura da Data Warehouse
+- Bronze (`bronze`) — raw ingested data
+- Silver (`silver`) — cleaned and normalized data
+- Gold (`gold`) — aggregated, analysis-ready tables (dimensions and facts)
+- Staging (`staging`) — transient tables for processing
 
-O banco de dados é organizado em 4 schemas (camadas):
+## Manage the data warehouse
 
-### 1. **Bronze Layer** (`bronze` schema)
-- Armazena dados brutos extraídos do OLTP
-- Sem transformações
-- Replicação 1:1 das tabelas de origem
+Connect to PostgreSQL CLI:
 
-### 2. **Silver Layer** (`silver` schema)
-- Dados limpos e normalizados
-- Aplicação de regras de negócio básicas
-- Remoção de duplicatas e valores nulos
-
-### 3. **Gold Layer** (`gold` schema)
-- Dados agregados e prontos para análise
-- Tabelas dimensionais (dim_*) e fatos (fact_*)
-- Tabela de log de execução de pipelines
-
-### 4. **Staging** (`staging` schema)
-- Tabelas temporárias para processamento
-- Limpas entre execuções de pipeline
-
-## Gerenciamento da Data Warehouse
-
-### Conectar ao PostgreSQL
-
-#### Usando psql (linha de comando)
 ```bash
 docker exec -it systock-postgres-dw psql -U postgres -d systock_dw
 ```
 
-#### Usando PgAdmin (Interface Web)
-1. Acesse http://localhost:5050
-2. Login com as credenciais do `.env`
-3. Clique em "Add New Server"
-4. Configure:
-   - **Name**: SyStock DW
-   - **Hostname/address**: postgres-dw
-   - **Port**: 5432
-   - **Username**: postgres
-   - **Password**: (conforme .env)
-
-### Executar Scripts SQL
+Run SQL scripts:
 
 ```bash
 docker exec -i systock-postgres-dw psql -U postgres -d systock_dw < script.sql
 ```
 
-### Ver logs do PostgreSQL
+View PostgreSQL logs:
 
 ```bash
 docker logs systock-postgres-dw
 ```
 
-## Execução do ETL Pipeline
-
-### Iniciar o pipeline manualmente
+Start the ETL pipeline manually:
 
 ```bash
 docker exec systock-etl python -m orchestrator.prefect_flow.main
 ```
 
-### Ver logs do ETL
+View ETL logs:
 
 ```bash
 docker logs -f systock-etl
 ```
 
-## Parando os Serviços
-
-### Parar todos os containers (mantém dados)
+Stop containers (preserve data):
 
 ```bash
 docker-compose stop
 ```
 
-### Remover todos os containers
+Bring down containers:
 
 ```bash
 docker-compose down
 ```
 
-### Remover todos os containers e volumes (CUIDADO - apaga dados!)
+Bring down containers and volumes (removes data):
 
 ```bash
 docker-compose down -v
@@ -159,75 +121,61 @@ docker-compose down -v
 
 ## Troubleshooting
 
-### PostgreSQL não inicia
+PostgreSQL won't start — check logs and volume state:
 
 ```bash
-# Verificar logs
 docker logs systock-postgres-dw
-
-# Verificar volume
 docker volume ls | grep postgres
-
-# Remover e recriar (cuidado com dados)
-docker-compose down -v
-docker-compose up -d postgres-dw
 ```
 
-### ETL pipeline não consegue conectar ao banco
+ETL cannot connect to DB — verify connectivity and env vars:
 
 ```bash
-# Verificar conectividade
 docker exec systock-etl pg_isready -h postgres-dw -p 5432 -U postgres
-
-# Verificar variáveis de ambiente
 docker exec systock-etl env | grep DB_
 ```
 
-### Prefect não inicia
+Prefect issues — recreate the service:
 
 ```bash
-# Limpar e reconstruir
 docker-compose stop prefect
 docker-compose rm prefect
 docker-compose up -d prefect
 ```
 
-## Desenvolvimento
+## Development
 
-### Compilar Dockerfile com flag de desenvolvimento
+Build ETL image (development):
 
 ```bash
 docker-compose build --no-cache etl-pipeline
 ```
 
-### Atualizar requirements.txt após mudanças
+Rebuild after `requirements.txt` changes:
 
 ```bash
 docker-compose build etl-pipeline
 docker-compose up -d etl-pipeline
 ```
 
-### Adicionar novos volumes ou envs
+Add volumes or env vars by editing `docker-compose.yml` and recreating services:
 
-Edite o `docker-compose.yml` e execute:
 ```bash
 docker-compose up -d --force-recreate
 ```
 
-## Segurança em Produção
+## Production notes
 
-⚠️ **IMPORTANTE**: Altere as credenciais padrão antes de colocar em produção:
+Before deploying to production:
 
-1. Altere `DB_PASSWORD` para uma senha forte
-2. Altere `PGADMIN_PASSWORD` para uma senha forte
-3. Configure variáveis de ambiente seguras
-4. Use secrets do Docker em ambientes de produção
-5. Configure backups automáticos do PostgreSQL
-6. Implemente SSL/TLS para conexões ao banco
+1. Replace default passwords in `.env`
+2. Use Docker secrets for sensitive values
+3. Configure automated PostgreSQL backups
+4. Enable SSL/TLS for DB connections
 
-## Recursos Adicionais
+## Resources
 
-- [Documentação Docker](https://docs.docker.com/)
-- [Documentação PostgreSQL](https://www.postgresql.org/docs/)
-- [Documentação Prefect](https://docs.prefect.io/)
-- [Documentação PgAdmin](https://www.pgadmin.org/docs/)
+- https://docs.docker.com/
+- https://www.postgresql.org/docs/
+- https://docs.prefect.io/
+- https://www.pgadmin.org/docs/
