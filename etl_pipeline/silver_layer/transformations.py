@@ -211,17 +211,6 @@ class DimensionTransformer:
                 pl.lit(None).alias("descricao_categoria"),
             ])
 
-        # Calculate margins
-        # df_transformed = df_transformed.with_columns([
-        #     (pl.col("preco_venda") - pl.col("custo_fornecedor"))
-        #     .alias("margem_bruta"),
-        #     (
-        #         ((pl.col("preco_venda") - pl.col("custo_fornecedor"))
-        #         / pl.col("preco_venda").fill_null(1)) * 100
-        #     ).round(2).alias("percentual_margem"),
-        #     pl.lit(datetime.now()).alias("data_carga"),
-        # ]).unique(subset=["id_produto"], keep="last")
-
         logger.info(f"✓ Produtos transformed: {len(df_transformed)} rows")
         return df_transformed
 
@@ -385,12 +374,6 @@ class FactTransformer:
         )
 
     def transform_vendas(self) -> pl.DataFrame:
-        # TODO: implement the following derived metrics where applicable:
-        # Direct calculations:
-        # total_value = quantity * unit_price
-        # total_cost = quantity * cost_unit
-        # profit = total_value - total_cost
-        # profit_margin = profit / total_value
 
         """
         Transform vendas (sales) data to fact_vendas.
@@ -402,42 +385,6 @@ class FactTransformer:
         """
 
         logger.info("Transforming vendas fact...")
-
-        # df_vendas = self._read_bronze_entity("vendas")
-        # #df_produtos = self._read_bronze_entity("produtos")
-
-        # if df_vendas is None:
-        #     raise FileNotFoundError("Bronze vendas data not found")
-
-        # #Start with vendas and their items
-        # df_transformed = (
-        #     df_vendas
-        #     .select(
-        #         pl.col("id").alias("id_venda"),
-        #         pl.col("sale_date"),
-        #         pl.col("status").alias("status_venda"),
-        #         pl.col("store_id").alias("id_loja"),
-        #         pl.col("client_id").alias("id_cliente"),
-        #     )
-        # )
-
-        # # adiciona id_tempo
-        # df_transformed = self._add_id_tempo(df_transformed, "sale_date")
-
-        # df_transformed = df_transformed.with_columns(
-        #     pl.lit(datetime.now()).alias("data_carga")
-        # ).select(
-        #     "id_venda",
-        #     "id_tempo",
-        #     "id_loja",
-        #     "id_cliente",
-        #     "status_venda",
-        #     "data_carga",
-        # )
-
-        # logger.info(f"✓ Vendas transformed: {len(df_transformed)} rows")
-
-        # return df_transformed
 
         df_vendas = self._read_bronze_entity("vendas")
         df_produtos = self._read_bronze_entity("produtos")
@@ -512,12 +459,6 @@ class FactTransformer:
         return df_final
 
     def transform_estoque(self) -> pl.DataFrame:
-        # TODO: Add metrics such as:
-        # initial_quantity (int), final_quantity (int),
-        # initial_value (float), final_value (float),
-        # inputs (int) and outputs (int)
-
-
         """
         Transform estoque (inventory) data to fact_estoque.
 
@@ -527,40 +468,6 @@ class FactTransformer:
             Transformed fact table with inventory data.
         """
         logger.info("Transforming estoque fact...")
-
-        # df_estoque = self._read_bronze_entity("estoque")
-
-        # if df_estoque is None:
-        #     raise FileNotFoundError("Bronze estoque data not found")
-
-        # df_transformed = (
-        #     df_estoque
-        #     .select(
-        #         pl.col("id").alias("id_estoque"),
-        #         pl.col("store_id").alias("id_loja"),
-        #         pl.col("product_id").alias("id_produto"),
-        #         pl.col("updated_at"),
-        #         pl.col("quantity").alias("quantidade_total"),
-        #     )
-        # )
-
-        # # adiciona id_tempo
-        # df_transformed = self._add_id_tempo(df_transformed, "updated_at")
-
-        # df_transformed = df_transformed.with_columns(
-        #     pl.lit(datetime.now()).alias("data_carga")
-        # ).select(
-        #     "id_estoque",
-        #     "id_tempo",
-        #     "id_loja",
-        #     "id_produto",
-        #     "quantidade_total",
-        #     "data_carga",
-        # )
-
-        # logger.info(f"✓ Estoque transformed: {len(df_transformed)} rows")
-
-        # return df_transformed
 
         df_estoque = self._read_bronze_entity("estoque")
         df_produtos = self._read_bronze_entity("produtos")
@@ -667,9 +574,6 @@ class FactTransformer:
             )
         )
 
-        # ==========================
-        # JOIN (núcleo do fato)
-        # ==========================
         df_transformed = (
             df_items
             .join(
