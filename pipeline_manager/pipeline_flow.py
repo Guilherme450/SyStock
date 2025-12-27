@@ -1,5 +1,4 @@
-from prefect import flow, task, get_run_logger, serve
-
+from prefect import flow, task
 from etl_pipeline.bronze_layer.bronze_pipeline import BronzePipeline
 from etl_pipeline.silver_layer.silver_pipeline import SilverPipeline
 from etl_pipeline.load.load_pipeline import LoadPipeline, _get_project_root

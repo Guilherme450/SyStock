@@ -8,14 +8,14 @@ from icecream import ic
 from typing import Dict, Optional, List
 import logging
 
-# Configuração de logging
+# Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# A API funciona por paginação
+# The API supports paginated endpoints
 API_URL = 'https://systock-api.onrender.com/'
 
 ENDPOINTS = {
@@ -34,15 +34,14 @@ ENDPOINTS = {
 
 
 def get_data(url: str, retries: int = 3) -> Optional[Dict]:
-    """
-    Conecta com a API e retorna os dados.
-    
+    """Connect to the API and return JSON data.
+
     Args:
-        url: URL da API para conectar
-        retries: Número de tentativas em caso de erro
-        
+        url: API URL to request
+        retries: number of retry attempts on failure
+
     Returns:
-        Dict com dados da API, ou None se falhar
+        dict with API response data, or None on failure
     """
     for attempt in range(retries):
         try:
@@ -73,11 +72,10 @@ def get_data(url: str, retries: int = 3) -> Optional[Dict]:
     return None
 
 def extract_all_endpoints() -> Dict[str, List[Dict]]:
-    """
-    Extrai dados de todos os endpoints disponíveis.
-    
+    """Extract data from all configured endpoints.
+
     Returns:
-        Dict com {endpoint_name: data}
+        mapping of {endpoint_name: data}
     """
     extracted_data = {}
     
@@ -92,14 +90,13 @@ def extract_all_endpoints() -> Dict[str, List[Dict]]:
 
 
 def validate_data(data: Dict) -> bool:
-    """
-    Valida se os dados extraídos estão no formato esperado.
-    
+    """Validate that extracted data matches the expected format.
+
     Args:
-        data: Dados extraídos da API
-        
+        data: data extracted from the API
+
     Returns:
-        bool: True se válido
+        bool: True if valid
     """
     if not data:
         logger.warning("Empty data received")
@@ -114,73 +111,66 @@ def validate_data(data: Dict) -> bool:
 
 
 def save_as_parquet(data: Dict, filename: str, output_dir: Optional[str] = None) -> Optional[str]:
-     """
-     Armazena dados no formato Parquet com compressão Snappy.
-    
-     Args:
-         data: Dicionário com dados a salvar
-         filename: Nome do arquivo (sem extensão)
-         output_dir: Diretório de saída. Se None, usa o diretório padrão.
-        
-     Returns:
-         str: Caminho do arquivo salvo, ou None se falhar
-     """
-     try:
-         # Validar dados
-         if not validate_data(data):
-             logger.error(f"Data validation failed for {filename}")
-             return None
-        
-         # Definir diretório de saída
-         if output_dir is None:
-             output_dir = Path(__file__).parent.parent / "data" / "raw"
-         else:
-             output_dir = Path(output_dir)
-        
-         output_dir.mkdir(parents=True, exist_ok=True)
-        
-         # Extrair dados se estiverem em estrutura nested
-         if isinstance(data, dict) and 'data' in data:
-             df_data = data['data']
-         else:
-             df_data = data
-        
-         # Converter para DataFrame Polars
-         logger.info(f"Converting data to Polars DataFrame")
-         df = pl.DataFrame(df_data)
-        
-         # Definir caminho do arquivo
-         file_path = output_dir / f"{filename}.parquet"
-        
-         # Salvar como Parquet
-         logger.info(f"Saving parquet file: {file_path}")
-         df.write_parquet(
-             file_path,
-             compression='snappy',
-             use_pyarrow=True
-         )
-        
-         logger.info(f"Successfully saved {len(df)} records to {file_path}")
-         return str(file_path)
-    
-     except Exception as e:
-         logger.error(f"Error saving parquet file {filename}: {str(e)}")
-         ic(e)
-         return None 
+    """Save data as a Parquet file with Snappy compression.
+
+    Args:
+        data: dictionary with data to save
+        filename: output filename (without extension)
+        output_dir: output directory; defaults to `etl_pipeline/data/raw`
+
+    Returns:
+        str: saved file path, or None on failure
+    """
+    try:
+        # Validar dados
+        if not validate_data(data):
+            logger.error(f"Data validation failed for {filename}")
+            return None
+
+        # Definir diretório de saída
+        if output_dir is None:
+            output_dir = Path(__file__).parent.parent / "data" / "raw"
+        else:
+            output_dir = Path(output_dir)
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Extrair dados se estiverem em estrutura nested
+        if isinstance(data, dict) and 'data' in data:
+            df_data = data['data']
+        else:
+            df_data = data
+
+        # Converter para DataFrame Polars
+        logger.info(f"Converting data to Polars DataFrame")
+        df = pl.DataFrame(df_data)
+
+        # Definir caminho do arquivo
+        file_path = output_dir / f"{filename}.parquet"
+
+        # Salvar como Parquet
+        logger.info(f"Saving parquet file: {file_path}")
+        df.write_parquet(
+            file_path,
+            compression='snappy',
+            use_pyarrow=True
+        )
+
+        logger.info(f"Successfully saved {len(df)} records to {file_path}")
+        return str(file_path)
+
+    except Exception as e:
+        logger.error(f"Error saving parquet file {filename}: {str(e)}")
+        ic(e)
+        return None
 
 
 if __name__ == '__main__':
     logger.info("Starting API extraction")
 
-    # client_data = {}
-    
+    # Example usage (uncomment to run locally):
     # data = get_data(API_URL + 'clients')
-
-    # client_data['clients'] = data
-    # if client_data:
-    #      result = save_as_parquet(client_data, 'raw_clientes')
-    #      ic(result)
+    # save_as_parquet({'clients': data}, 'raw_clients')
 
     ic(extract_all_endpoints())
-    
     logger.info("API extraction completed")
