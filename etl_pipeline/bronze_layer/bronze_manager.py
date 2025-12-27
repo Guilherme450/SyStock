@@ -1,6 +1,6 @@
-"""
-Bronze Layer Manager
-Gerencia a ingestão e armazenamento de dados brutos da API.
+"""Bronze Layer Manager
+
+Manages ingestion and storage of raw API data into Parquet files.
 """
 
 import logging
@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 import polars as pl
 from icecream import ic
 
-# Configuração de logging
+# Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -19,22 +19,20 @@ logger = logging.getLogger(__name__)
 
 
 class BronzeLayerManager:
-    """
-    Gerenciador da camada Bronze.
-    Responsável por:
-    - Receber dados brutos da API
-    - Validar dados básicos
-    - Armazenar em Parquet com compressão
-    - Manter histórico com timestamps
+    """Manager for the Bronze layer.
+
+    Responsibilities:
+    - receive raw API data
+    - basic validation
+    - store as Parquet with compression
+    - maintain ingestion history with timestamps
     """
 
     def __init__(self, base_path: Optional[str] = None):
-        """
-        Inicializa o gerenciador da bronze layer.
-        
+        """Initialize the Bronze layer manager.
+
         Args:
-            base_path: Caminho base para armazenar arquivos. 
-                      Se None, usa o diretório atual.
+            base_path: base path for storing files. If None, uses the default data/bronze path.
         """
         if base_path is None:
             base_path = Path(__file__).parent.parent / "data" / "bronze"
@@ -46,16 +44,15 @@ class BronzeLayerManager:
         logger.info(f"Bronze Layer initialized at: {self.base_path}")
 
     def validate_raw_data(self, data: List) -> bool:
-         #TODO: O MÓDULO EXTRACT JÁ POSSUI ESSE RECURSO
+        # TODO: The extract module already provides validation; keep lightweight checks here.
 
-        """
-        Valida dados brutos recebidos da API.
-        
+        """Validate raw data received from the API.
+
         Args:
-            data: Lista de dicionários com dados brutos
-            
+            data: list of dictionaries with raw records
+
         Returns:
-            bool: True se dados são válidos
+            bool: True if data is valid
         """
         if not data:
             logger.warning("Empty data received")
@@ -69,15 +66,14 @@ class BronzeLayerManager:
         return True
 
     def ingest_data(self, data: List, entity_name: str) -> Optional[str]:
-        """
-        Ingere dados brutos e armazena em Parquet.
-        
+        """Ingest raw data and store it as a Parquet file.
+
         Args:
-            data: Dicionário com dados brutos da API
-            entity_name: Nome da entidade (ex: 'clientes', 'produtos')
-            
+            data: data payload from the API
+            entity_name: entity name (e.g., 'clientes', 'produtos')
+
         Returns:
-            str: Caminho do arquivo salvo, ou None se falhar
+            str: saved file path, or None on failure
         """
         try:
             # Validar dados
@@ -102,7 +98,7 @@ class BronzeLayerManager:
                 pl.lit(entity_name).alias("_entity_name"),
             ])
             
-            # Gerar nome do arquivo
+            # Generate filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{entity_name}_raw_{timestamp}.parquet"
             file_path = self.base_path / entity_name / filename
@@ -131,20 +127,18 @@ class BronzeLayerManager:
             return None
 
     def ingest_multiple_entities(
-        self, 
+        self,
         data_dict: Dict[str, List[Dict]]
     ) -> Dict[str, Optional[str]]:
-        
-         #TODO: O MÓDULO EXTRACT JÁ POSSUI ESSE RECURSO
+        # TODO: The extract module can already batch; this method coordinates ingestion.
 
-        """
-        Ingere múltiplas entidades de uma vez.
-        
+        """Ingest multiple entities at once.
+
         Args:
-            data_dict: Dicionário {entity_name: data}
-            
+            data_dict: mapping of {entity_name: data}
+
         Returns:
-            Dict com resultado de cada entidade
+            dict with results per entity
         """
         results = {}
         
@@ -156,81 +150,51 @@ class BronzeLayerManager:
         
         return results
 
-    # def get_latest_file(self, entity_name: str) -> Optional[Path]:
-    #     """
-    #     Obtém o arquivo Parquet mais recente de uma entidade.
+    def _get_latest_file(self, entity_name: str) -> Optional[Path]:
+        """Return the most recent Parquet file for an entity, or None if missing."""
+        entity_path = self.base_path / entity_name
         
-    #     Args:
-    #         entity_name: Nome da entidade
-            
-    #     Returns:
-    #         Path: Caminho do arquivo mais recente, ou None se não existir
-    #     """
-    #     entity_path = self.base_path / entity_name
+        if not entity_path.exists():
+            logger.warning(f"No data found for entity: {entity_name}")
+            return None
         
-    #     if not entity_path.exists():
-    #         logger.warning(f"No data found for entity: {entity_name}")
-    #         return None
+        parquet_files = list(entity_path.glob("*.parquet"))
         
-    #     parquet_files = list(entity_path.glob("*.parquet"))
+        if not parquet_files:
+            logger.warning(f"No parquet files found for entity: {entity_name}")
+            return None
         
-    #     if not parquet_files:
-    #         logger.warning(f"No parquet files found for entity: {entity_name}")
-    #         return None
+        latest_file = max(parquet_files, key=lambda p: p.stat().st_mtime)
+        logger.info(f"Latest file for {entity_name}: {latest_file}")
         
-    #     latest_file = max(parquet_files, key=lambda p: p.stat().st_mtime)
-    #     logger.info(f"Latest file for {entity_name}: {latest_file}")
-        
-    #     return latest_file
+        return latest_file
 
-    # def read_latest_data(self, entity_name: str) -> Optional[pl.DataFrame]:
-    #     """
-    #     Lê o arquivo Parquet mais recente de uma entidade.
+    def _read_latest_data(self, entity_name: str) -> Optional[pl.DataFrame]:
+        """Read the latest Parquet file for an entity and return a Polars DataFrame."""
+        latest_file = self._get_latest_file(entity_name)
         
-    #     Args:
-    #         entity_name: Nome da entidade
-            
-    #     Returns:
-    #         pl.DataFrame: DataFrame com dados, ou None se não existir
-    #     """
-    #     latest_file = self.get_latest_file(entity_name)
+        if latest_file is None:
+            return None
         
-    #     if latest_file is None:
-    #         return None
+        try:
+            logger.info(f"Reading data from: {latest_file}")
+            df = pl.read_parquet(latest_file)
+            logger.info(f"Successfully read {len(df)} records from {latest_file}")
+            return df
         
-    #     try:
-    #         logger.info(f"Reading data from: {latest_file}")
-    #         df = pl.read_parquet(latest_file)
-    #         logger.info(f"Successfully read {len(df)} records from {latest_file}")
-    #         return df
-        
-    #     except Exception as e:
-    #         logger.error(f"Error reading parquet file {latest_file}: {str(e)}")
-    #         ic(e)
-    #         return None
+        except Exception as e:
+            logger.error(f"Error reading parquet file {latest_file}: {str(e)}")
+            return None
 
     def list_entities(self) -> List[str]:
-        """
-        Lista todas as entidades com dados na bronze layer.
-        
-        Returns:
-            List[str]: Lista de nomes de entidades
-        """
+        """List all entity directories in the bronze layer."""
         entities = [d.name for d in self.base_path.iterdir() if d.is_dir()]
         logger.info(f"Available entities: {entities}")
         return sorted(entities)
 
     def get_entity_statistics(self, entity_name: str) -> Dict:
-        """
-        Obtém estatísticas sobre os dados de uma entidade.
-        
-        Args:
-            entity_name: Nome da entidade
-            
-        Returns:
-            Dict com estatísticas
-        """
-        df = self.read_latest_data(entity_name)
+        """Return statistics for the latest file of the specified entity."""
+        df = self._read_latest_data(entity_name)
         
         if df is None:
             return {}
@@ -241,22 +205,21 @@ class BronzeLayerManager:
             "total_columns": len(df.columns),
             "columns": df.columns,
             "last_ingestion": df.select(pl.col("_ingestion_timestamp")).max()[0, 0],
-            "file_size_mb": self.get_latest_file(entity_name).stat().st_size / (1024 * 1024)
+            "file_size_mb": self._get_latest_file(entity_name).stat().st_size / (1024 * 1024)
         }
         
         logger.info(f"Statistics for {entity_name}: {stats}")
         return stats
 
     def cleanup_old_files(self, entity_name: str, keep_count: int = 5) -> int:
-        """
-        Remove arquivos antigos mantendo os N mais recentes.
-        
+        """Remove old files, keeping the N most recent ones.
+
         Args:
-            entity_name: Nome da entidade
-            keep_count: Número de arquivos a manter
-            
+            entity_name: entity folder name
+            keep_count: number of recent files to keep
+
         Returns:
-            int: Número de arquivos removidos
+            int: number of files removed
         """
         entity_path = self.base_path / entity_name
         
