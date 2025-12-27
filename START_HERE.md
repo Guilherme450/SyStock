@@ -100,6 +100,3 @@ print(low)
 - Automation: schedule pipelines (e.g., Prefect), add monitoring and alerts
 - CI/CD and production deployments
 
----
-
-If you want, I can translate additional Silver-related files (detailed guides and implementation notes) or run a pass to remove redundant comments inside code files as well.
