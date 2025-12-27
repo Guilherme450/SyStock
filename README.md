@@ -59,6 +59,64 @@ docker-compose exec <service> python -m pipeline_manager.pipeline_flow
 
 See [DOCKER_SETUP.md](DOCKER_SETUP.md) for full container configuration and [START_HERE.md](START_HERE.md) for project onboarding steps.
 
+How to run locally
+-------------------
+You can run this project either using Docker Compose (recommended) or locally with Python for development. Choose the option that fits your environment.
+
+- Requirements: Docker & Docker Compose (for Docker), Python 3.9+ and `pip` (for local development).
+
+- Option A — Docker Compose (recommended):
+
+```bash
+# Start all services (Postgres, ETL, etc.)
+docker-compose up --build -d
+
+# Follow ETL container logs
+docker-compose logs -f etl-pipeline
+
+# Execute the main pipeline inside the ETL container
+docker-compose exec etl-pipeline python -m pipeline_manager.pipeline_flow
+```
+
+Note: the ETL service is named `etl-pipeline` in [docker-compose.yml](docker-compose.yml).
+
+- Option B — Run locally with Python (development):
+
+1. Start only the database service (recommended) or ensure a PostgreSQL instance is available:
+
+```bash
+docker-compose up -d postgres-dw
+```
+
+2. Create and activate a virtual environment, then install dependencies:
+
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# Unix / macOS
+source .venv/bin/activate
+
+pip install -r etl_pipeline/requirements.txt
+```
+
+3. Configure required environment variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`). Use a `.env` file or your shell to set them.
+
+4. Run the pipeline locally:
+
+```bash
+python -m pipeline_manager.pipeline_flow
+```
+
+- Running tests:
+
+```bash
+pip install -r etl_pipeline/requirements.txt
+pytest -q
+```
+
+Helpful files: [docker-compose.yml](docker-compose.yml), [etl_pipeline/requirements.txt](etl_pipeline/requirements.txt), and the pipeline entrypoint [pipeline_manager/pipeline_flow.py](pipeline_manager/pipeline_flow.py).
+
 Development
 -----------
 To run tests locally (from a configured Python environment):
